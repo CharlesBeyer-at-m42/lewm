@@ -161,6 +161,22 @@ def load_checkpoint_modules(path: Path):
     return encoder, action_encoder, predictor, link, payload.get("epoch")
 
 
+def mup_metadata(encoder, action_encoder, predictor, base_width: int) -> dict:
+    """Per-tensor muP learning-rate multipliers and weight-decay flags, mirroring
+    models/mup.py::mup_param_groups: matrix-like (Linear/Conv weights) get base_width / fan_in,
+    everything else 1.0; weight decay only on tensors with dim >= 2."""
+    from models.mup import mup_fan_in_map
+
+    meta: dict = {"lewm.mup.base_width": int(base_width)}
+    for prefix, module in zip(COMPONENTS, (encoder, action_encoder, predictor)):
+        fmap = mup_fan_in_map(module)
+        for name, p in module.named_parameters():
+            mult = float(base_width) / float(fmap[name]) if name in fmap else 1.0
+            meta[f"lewm.mup.lr_mult.{prefix}.{name}"] = mult
+            meta[f"lewm.mup.wd.{prefix}.{name}"] = bool(p.dim() >= 2)
+    return meta
+
+
 def state_tensors(encoder, action_encoder, predictor):
     """Yield (name, float32 numpy) for every parameter, names mirroring the reference."""
     for prefix, module in zip(COMPONENTS, (encoder, action_encoder, predictor)):

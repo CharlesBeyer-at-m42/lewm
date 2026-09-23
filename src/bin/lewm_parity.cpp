@@ -12,7 +12,7 @@
 #include "lewm/parity.hpp"
 
 int main(int argc, char** argv) {
-    std::string model_path, dump_path;
+    std::string model_path, dump_path, device = "cpu";
     double tol = 1e-4;
     int threads = 0;
     for (int i = 1; i < argc; ++i) {
@@ -21,6 +21,8 @@ int main(int argc, char** argv) {
             tol = std::atof(argv[++i]);
         } else if (a == "--threads" && i + 1 < argc) {
             threads = std::atoi(argv[++i]);
+        } else if (a == "--device" && i + 1 < argc) {
+            device = argv[++i];
         } else if (model_path.empty()) {
             model_path = a;
         } else if (dump_path.empty()) {
@@ -31,12 +33,12 @@ int main(int argc, char** argv) {
         }
     }
     if (model_path.empty() || dump_path.empty()) {
-        std::fprintf(stderr, "usage: lewm-parity <model.gguf> <dump.gguf> [--tol 1e-4] [--threads N]\n");
+        std::fprintf(stderr, "usage: lewm-parity <model.gguf> <dump.gguf> [--tol 1e-4] [--threads N] [--device cpu|gpu]\n");
         return 2;
     }
     try {
-        lewm::WorldModel wm(model_path, threads);
-        std::printf("model: %s\n  %s\n", model_path.c_str(), wm.hparams().describe().c_str());
+        lewm::WorldModel wm(model_path, threads, device);
+        std::printf("model: %s (%s)\n  %s\n", model_path.c_str(), ggml_backend_name(wm.backend()), wm.hparams().describe().c_str());
         lewm::GgufStore dump(dump_path, wm.backend());
         std::printf("dump:  %s\n\n", dump_path.c_str());
         lewm::ParityReport rep = lewm::run_parity(wm, dump, tol);

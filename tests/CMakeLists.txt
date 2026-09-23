@@ -12,6 +12,7 @@ add_executable(lewm-tests
     test_main.cpp
     test_host_tensor.cpp
     test_parity.cpp
+    test_ggml_ops.cpp
 )
 target_link_libraries(lewm-tests PRIVATE lewm doctest::doctest)
 target_compile_definitions(lewm-tests PRIVATE LEWM_TESTDATA_DIR="${LEWM_TESTDATA_DIR}")

@@ -3,7 +3,10 @@ add_library(lewm STATIC
     lewm/gguf_store.cpp
     lewm/hparams.cpp
     lewm/session.cpp
+    lewm/rng.cpp
+    lewm/graph_builder.cpp
     lewm/world_model.cpp
+    lewm/train_graph.cpp
     lewm/parity.cpp
 )
 target_include_directories(lewm PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
@@ -15,3 +18,6 @@ target_link_libraries(lewm-parity PRIVATE lewm)
 
 add_executable(lewm-rollout bin/lewm_rollout.cpp)
 target_link_libraries(lewm-rollout PRIVATE lewm)
+
+add_executable(lewm-gradcheck bin/lewm_gradcheck.cpp)
+target_link_libraries(lewm-gradcheck PRIVATE lewm)

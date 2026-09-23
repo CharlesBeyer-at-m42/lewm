@@ -21,12 +21,21 @@ void Binder::output(const std::string& name, ggml_tensor* t) {
     outputs_.emplace_back(name, t);
 }
 
-Session::Session(int n_threads) {
-    backend_ = ggml_backend_cpu_init();
-    if (!backend_) throw std::runtime_error("ggml_backend_cpu_init failed");
-    if (n_threads <= 0) n_threads = static_cast<int>(std::thread::hardware_concurrency());
-    if (n_threads <= 0) n_threads = 4;
-    ggml_backend_cpu_set_n_threads(backend_, n_threads);
+Session::Session(int n_threads, const std::string& device) : device_(device) {
+    if (device == "cpu") {
+        backend_ = ggml_backend_cpu_init();
+        if (!backend_) throw std::runtime_error("ggml_backend_cpu_init failed");
+        if (n_threads <= 0) n_threads = static_cast<int>(std::thread::hardware_concurrency());
+        if (n_threads <= 0) n_threads = 4;
+        ggml_backend_cpu_set_n_threads(backend_, n_threads);
+    } else if (device == "gpu") {
+        ggml_backend_dev_t dev = ggml_backend_dev_by_type(GGML_BACKEND_DEVICE_TYPE_GPU);
+        if (!dev) throw std::runtime_error("no GPU backend registered in this build (configure with GGML_CUDA=ON)");
+        backend_ = ggml_backend_dev_init(dev, nullptr);
+        if (!backend_) throw std::runtime_error(std::string("failed to initialise GPU backend ") + ggml_backend_dev_name(dev));
+    } else {
+        throw std::runtime_error("unknown device: " + device + " (expected cpu or gpu)");
+    }
     galloc_ = ggml_gallocr_new(ggml_backend_get_default_buffer_type(backend_));
 }
 

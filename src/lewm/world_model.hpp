@@ -10,16 +10,17 @@
 
 namespace lewm {
 
-/// The LpWM world model on ggml: encoder, action encoder, predictor, link.
+/// The LpWM world model on ggml, inference side: encoder, action encoder, predictor, link.
 /// Tensor shapes below use ggml order (innermost first). C = code_dim, P = tokens per frame.
 ///
 /// Output names match tools/dump_reference.py so the same map can be compared to a dump.
 class WorldModel {
 public:
-    WorldModel(const std::string& model_path, int n_threads = 0);
+    WorldModel(const std::string& model_path, int n_threads = 0, const std::string& device = "cpu");
 
     const Hparams& hparams() const { return hp_; }
     const GgufStore& weights() const { return *weights_; }
+    GgufStore& weights() { return *weights_; }
     ggml_backend_t backend() const { return session_->backend(); }
 
     /// images: {W, H, 3, N} normalised as the reference transform does.
@@ -42,18 +43,6 @@ private:
     Hparams hp_;
     std::unique_ptr<Session> session_;
     std::unique_ptr<GgufStore> weights_;
-
-    ggml_tensor* w(const std::string& name) const { return weights_->tensor(name); }
-
-    // graph pieces
-    ggml_tensor* layer_norm(ggml_context* ctx, ggml_tensor* x, const std::string& prefix, float eps) const;
-    ggml_tensor* attention(ggml_context* ctx, ggml_tensor* x, ggml_tensor* mask, const std::string& prefix,
-                           uint32_t heads, uint32_t dim_head) const;
-    ggml_tensor* feed_forward(ggml_context* ctx, ggml_tensor* x, const std::string& prefix) const;
-    ggml_tensor* mlp_head(ggml_context* ctx, ggml_tensor* x, const std::string& prefix) const;
-    ggml_tensor* link(ggml_context* ctx, ggml_tensor* u) const;
-
-    HostTensor causal_mask(int64_t T, int64_t P) const;
 };
 
 }  // namespace lewm

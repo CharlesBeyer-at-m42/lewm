@@ -30,6 +30,8 @@ public:
 
     bool has_key(const std::string& key) const;
     uint32_t get_u32(const std::string& key) const;
+    float get_f32(const std::string& key) const;
+    bool get_bool(const std::string& key) const;
     std::string get_str(const std::string& key) const;
 
     const std::string& path() const { return path_; }

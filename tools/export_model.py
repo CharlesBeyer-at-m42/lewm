@@ -68,6 +68,7 @@ def main(argv=None) -> int:
     ap.add_argument("--config", type=Path, help="resolved hydra.yaml of a run (for --random)")
     ap.add_argument("--action-dim", type=int, default=10, help="chunked action width (for --random)")
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--mup-base-width", type=int, default=0, help="muP base width for lr multipliers (default: encoder dim)")
     ap.add_argument("--out", type=Path, required=True)
     args = ap.parse_args(argv)
 
@@ -87,7 +88,9 @@ def main(argv=None) -> int:
     tensors = list(L.state_tensors(encoder, action_encoder, predictor))
     n_params = sum(int(a.size) for _, a in tensors)
     args.out.parent.mkdir(parents=True, exist_ok=True)
-    L.write_gguf(args.out, hp, tensors, {"lewm.source": source})
+    meta = {"lewm.source": source}
+    meta.update(L.mup_metadata(encoder, action_encoder, predictor, base_width=args.mup_base_width or hp.dim))
+    L.write_gguf(args.out, hp, tensors, meta)
 
     print(f"wrote {args.out}  tensors={len(tensors)}  params={n_params:,}")
     for k, v in vars(hp).items():

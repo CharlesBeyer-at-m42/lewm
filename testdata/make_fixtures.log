@@ -1,0 +1,249 @@
+<frozen site>:101: RuntimeWarning: Unexpected value in sys.prefix, expected /home/cbeyer/work/lewm-test/lpworldmodel/.venv, got /home/cbeyer/work/lewm-test/lewm/../lpworldmodel/.venv
+<frozen site>:101: RuntimeWarning: Unexpected value in sys.exec_prefix, expected /home/cbeyer/work/lewm-test/lpworldmodel/.venv, got /home/cbeyer/work/lewm-test/lewm/../lpworldmodel/.venv
+/home/cbeyer/work/lewm-test/lewm/tools/export_model.py:39: UserWarning: hydra.utils.instantiate() resolved _target_='models.vit_encoder.ViTEncoder' with no
+_execution_whitelist_. This preserves legacy behavior but is deprecated
+because config-controlled targets can execute arbitrary code. This
+warning will become an error in Hydra 1.5. Pass an execution whitelist
+from trusted call-site code, or pass UNSAFE_DISABLE_EXECUTION_CHECKS to
+explicitly keep legacy behavior.
+See https://hydra.cc/docs/advanced/execution_whitelist/
+  encoder = hydra.utils.instantiate(cfg.encoder)
+/home/cbeyer/work/lewm-test/lewm/tools/export_model.py:40: UserWarning: hydra.utils.instantiate() resolved _target_='models.infojepa_modules.Embedder' with no
+_execution_whitelist_. This preserves legacy behavior but is deprecated
+because config-controlled targets can execute arbitrary code. This
+warning will become an error in Hydra 1.5. Pass an execution whitelist
+from trusted call-site code, or pass UNSAFE_DISABLE_EXECUTION_CHECKS to
+explicitly keep legacy behavior.
+See https://hydra.cc/docs/advanced/execution_whitelist/
+  action_encoder = hydra.utils.instantiate(
+/home/cbeyer/work/lewm-test/lewm/tools/export_model.py:43: UserWarning: hydra.utils.instantiate() resolved _target_='models.infojepa_modules.ARPredictor' with no
+_execution_whitelist_. This preserves legacy behavior but is deprecated
+because config-controlled targets can execute arbitrary code. This
+warning will become an error in Hydra 1.5. Pass an execution whitelist
+from trusted call-site code, or pass UNSAFE_DISABLE_EXECUTION_CHECKS to
+explicitly keep legacy behavior.
+See https://hydra.cc/docs/advanced/execution_whitelist/
+  predictor = hydra.utils.instantiate(
+/home/cbeyer/work/lewm-test/lewm/tools/export_model.py:51: UserWarning: hydra.utils.instantiate() resolved _target_='models.infojepa_modules.Link' with no
+_execution_whitelist_. This preserves legacy behavior but is deprecated
+because config-controlled targets can execute arbitrary code. This
+warning will become an error in Hydra 1.5. Pass an execution whitelist
+from trusted call-site code, or pass UNSAFE_DISABLE_EXECUTION_CHECKS to
+explicitly keep legacy behavior.
+See https://hydra.cc/docs/advanced/execution_whitelist/
+  link = hydra.utils.instantiate(cfg.link) if cfg.get("link") else None
+wrote testdata/random_seed0.gguf  tensors=237  params=38,970,350
+  image_size                 224
+  patch_size                 14
+  dim                        384
+  encoder_depth              12
+  encoder_heads              3
+  encoder_dim_head           64
+  encoder_mlp_dim            768
+  encoder_feature            cls
+  encoder_proj_hidden        2048
+  code_dim                   384
+  action_dim                 10
+  action_smoothed_dim        10
+  action_mlp_hidden          1536
+  predictor_depth            6
+  predictor_heads            16
+  predictor_dim_head         64
+  predictor_mlp_dim          2048
+  predictor_num_frames       3
+  predictor_num_patches      1
+  predictor_proj_hidden      2048
+  link                       reprelu
+<frozen site>:101: RuntimeWarning: Unexpected value in sys.prefix, expected /home/cbeyer/work/lewm-test/lpworldmodel/.venv, got /home/cbeyer/work/lewm-test/lewm/../lpworldmodel/.venv
+<frozen site>:101: RuntimeWarning: Unexpected value in sys.exec_prefix, expected /home/cbeyer/work/lewm-test/lpworldmodel/.venv, got /home/cbeyer/work/lewm-test/lewm/../lpworldmodel/.venv
+wrote testdata/random_seed0.dump.gguf  tensors=30
+  in.visual                    (4, 3, 224, 224)       |max|=1  nz=1.00
+  in.actions                   (6, 10)                |max|=2.115  nz=1.00
+  encoder.block.0.out          (4, 257, 384)          |max|=2.232  nz=1.00
+  encoder.block.1.out          (4, 257, 384)          |max|=2.504  nz=1.00
+  encoder.block.10.out         (4, 257, 384)          |max|=4.867  nz=1.00
+  encoder.block.11.out         (4, 257, 384)          |max|=4.775  nz=1.00
+  encoder.block.2.out          (4, 257, 384)          |max|=2.964  nz=1.00
+  encoder.block.3.out          (4, 257, 384)          |max|=3.799  nz=1.00
+  encoder.block.4.out          (4, 257, 384)          |max|=3.821  nz=1.00
+  encoder.block.5.out          (4, 257, 384)          |max|=4.275  nz=1.00
+  encoder.block.6.out          (4, 257, 384)          |max|=3.896  nz=1.00
+  encoder.block.7.out          (4, 257, 384)          |max|=4.043  nz=1.00
+  encoder.block.8.out          (4, 257, 384)          |max|=4.45  nz=1.00
+  encoder.block.9.out          (4, 257, 384)          |max|=4.47  nz=1.00
+  encoder.norm.out             (4, 257, 384)          |max|=3.911  nz=1.00
+  encoder.tokens_in            (4, 257, 384)          |max|=1.932  nz=1.00
+  encoder.u                    (4, 1, 384)            |max|=1.288  nz=1.00
+  encoder.z                    (4, 1, 384)            |max|=1.288  nz=0.52
+  action_encoder.out           (6, 384)               |max|=0.4715  nz=1.00
+  predictor.block.0.out        (3, 384)               |max|=1.322  nz=1.00
+  predictor.block.1.out        (3, 384)               |max|=1.321  nz=1.00
+  predictor.block.2.out        (3, 384)               |max|=1.326  nz=1.00
+  predictor.block.3.out        (3, 384)               |max|=1.304  nz=1.00
+  predictor.block.4.out        (3, 384)               |max|=1.321  nz=1.00
+  predictor.block.5.out        (3, 384)               |max|=1.325  nz=1.00
+  predictor.norm.out           (3, 384)               |max|=4.972  nz=1.00
+  predictor.tokens_in          (3, 384)               |max|=1.328  nz=1.00
+  predictor.u_pred             (3, 1, 384)            |max|=1.09  nz=1.00
+  predictor.z_pred             (3, 1, 384)            |max|=1.09  nz=0.48
+  rollout.z                    (7, 1, 384)            |max|=1.29  nz=0.51
+<frozen site>:101: RuntimeWarning: Unexpected value in sys.prefix, expected /home/cbeyer/work/lewm-test/lpworldmodel/.venv, got /home/cbeyer/work/lewm-test/lewm/../lpworldmodel/.venv
+<frozen site>:101: RuntimeWarning: Unexpected value in sys.exec_prefix, expected /home/cbeyer/work/lewm-test/lpworldmodel/.venv, got /home/cbeyer/work/lewm-test/lewm/../lpworldmodel/.venv
+<frozen site>:101: RuntimeWarning: Unexpected value in sys.prefix, expected /home/cbeyer/work/lewm-test/lpworldmodel/.venv, got /home/cbeyer/work/lewm-test/lewm/../lpworldmodel/.venv
+<frozen site>:101: RuntimeWarning: Unexpected value in sys.exec_prefix, expected /home/cbeyer/work/lewm-test/lpworldmodel/.venv, got /home/cbeyer/work/lewm-test/lewm/../lpworldmodel/.venv
+/home/cbeyer/work/lewm-test/lewm/tools/export_model.py:39: UserWarning: hydra.utils.instantiate() resolved _target_='models.vit_encoder.ViTEncoder' with no
+_execution_whitelist_. This preserves legacy behavior but is deprecated
+because config-controlled targets can execute arbitrary code. This
+warning will become an error in Hydra 1.5. Pass an execution whitelist
+from trusted call-site code, or pass UNSAFE_DISABLE_EXECUTION_CHECKS to
+explicitly keep legacy behavior.
+See https://hydra.cc/docs/advanced/execution_whitelist/
+  encoder = hydra.utils.instantiate(cfg.encoder)
+/home/cbeyer/work/lewm-test/lewm/tools/export_model.py:40: UserWarning: hydra.utils.instantiate() resolved _target_='models.infojepa_modules.Embedder' with no
+_execution_whitelist_. This preserves legacy behavior but is deprecated
+because config-controlled targets can execute arbitrary code. This
+warning will become an error in Hydra 1.5. Pass an execution whitelist
+from trusted call-site code, or pass UNSAFE_DISABLE_EXECUTION_CHECKS to
+explicitly keep legacy behavior.
+See https://hydra.cc/docs/advanced/execution_whitelist/
+  action_encoder = hydra.utils.instantiate(
+/home/cbeyer/work/lewm-test/lewm/tools/export_model.py:43: UserWarning: hydra.utils.instantiate() resolved _target_='models.infojepa_modules.ARPredictor' with no
+_execution_whitelist_. This preserves legacy behavior but is deprecated
+because config-controlled targets can execute arbitrary code. This
+warning will become an error in Hydra 1.5. Pass an execution whitelist
+from trusted call-site code, or pass UNSAFE_DISABLE_EXECUTION_CHECKS to
+explicitly keep legacy behavior.
+See https://hydra.cc/docs/advanced/execution_whitelist/
+  predictor = hydra.utils.instantiate(
+/home/cbeyer/work/lewm-test/lewm/tools/export_model.py:51: UserWarning: hydra.utils.instantiate() resolved _target_='models.infojepa_modules.Link' with no
+_execution_whitelist_. This preserves legacy behavior but is deprecated
+because config-controlled targets can execute arbitrary code. This
+warning will become an error in Hydra 1.5. Pass an execution whitelist
+from trusted call-site code, or pass UNSAFE_DISABLE_EXECUTION_CHECKS to
+explicitly keep legacy behavior.
+See https://hydra.cc/docs/advanced/execution_whitelist/
+  link = hydra.utils.instantiate(cfg.link) if cfg.get("link") else None
+wrote testdata/random_patch_seed0.gguf  tensors=238  params=39,068,654
+  image_size                 224
+  patch_size                 14
+  dim                        384
+  encoder_depth              12
+  encoder_heads              3
+  encoder_dim_head           64
+  encoder_mlp_dim            768
+  encoder_feature            patch
+  encoder_proj_hidden        2048
+  code_dim                   384
+  action_dim                 10
+  action_smoothed_dim        10
+  action_mlp_hidden          1536
+  predictor_depth            6
+  predictor_heads            16
+  predictor_dim_head         64
+  predictor_mlp_dim          2048
+  predictor_num_frames       3
+  predictor_num_patches      256
+  predictor_proj_hidden      2048
+  link                       reprelu
+<frozen site>:101: RuntimeWarning: Unexpected value in sys.prefix, expected /home/cbeyer/work/lewm-test/lpworldmodel/.venv, got /home/cbeyer/work/lewm-test/lewm/../lpworldmodel/.venv
+<frozen site>:101: RuntimeWarning: Unexpected value in sys.exec_prefix, expected /home/cbeyer/work/lewm-test/lpworldmodel/.venv, got /home/cbeyer/work/lewm-test/lewm/../lpworldmodel/.venv
+wrote testdata/random_patch_seed0.dump.gguf  tensors=30
+  in.visual                    (4, 3, 224, 224)       |max|=1  nz=1.00
+  in.actions                   (6, 10)                |max|=2.763  nz=1.00
+  encoder.block.0.out          (4, 257, 384)          |max|=2.233  nz=1.00
+  encoder.block.1.out          (4, 257, 384)          |max|=2.504  nz=1.00
+  encoder.block.10.out         (4, 257, 384)          |max|=4.864  nz=1.00
+  encoder.block.11.out         (4, 257, 384)          |max|=4.771  nz=1.00
+  encoder.block.2.out          (4, 257, 384)          |max|=2.964  nz=1.00
+  encoder.block.3.out          (4, 257, 384)          |max|=3.798  nz=1.00
+  encoder.block.4.out          (4, 257, 384)          |max|=3.821  nz=1.00
+  encoder.block.5.out          (4, 257, 384)          |max|=4.276  nz=1.00
+  encoder.block.6.out          (4, 257, 384)          |max|=3.902  nz=1.00
+  encoder.block.7.out          (4, 257, 384)          |max|=4.116  nz=1.00
+  encoder.block.8.out          (4, 257, 384)          |max|=4.523  nz=1.00
+  encoder.block.9.out          (4, 257, 384)          |max|=4.468  nz=1.00
+  encoder.norm.out             (4, 257, 384)          |max|=3.908  nz=1.00
+  encoder.tokens_in            (4, 257, 384)          |max|=1.932  nz=1.00
+  encoder.u                    (4, 256, 384)          |max|=1.515  nz=1.00
+  encoder.z                    (4, 256, 384)          |max|=1.272  nz=0.52
+  action_encoder.out           (6, 384)               |max|=0.4526  nz=1.00
+  predictor.block.0.out        (768, 384)             |max|=1.29  nz=1.00
+  predictor.block.1.out        (768, 384)             |max|=1.299  nz=1.00
+  predictor.block.2.out        (768, 384)             |max|=1.284  nz=1.00
+  predictor.block.3.out        (768, 384)             |max|=1.274  nz=1.00
+  predictor.block.4.out        (768, 384)             |max|=1.275  nz=1.00
+  predictor.block.5.out        (768, 384)             |max|=1.292  nz=1.00
+  predictor.norm.out           (768, 384)             |max|=4.909  nz=1.00
+  predictor.tokens_in          (768, 384)             |max|=1.301  nz=1.00
+  predictor.u_pred             (3, 256, 384)          |max|=1.552  nz=1.00
+  predictor.z_pred             (3, 256, 384)          |max|=1.552  nz=0.51
+  rollout.z                    (7, 256, 384)          |max|=1.505  nz=0.50
+<frozen site>:101: RuntimeWarning: Unexpected value in sys.prefix, expected /home/cbeyer/work/lewm-test/lpworldmodel/.venv, got /home/cbeyer/work/lewm-test/lewm/../lpworldmodel/.venv
+<frozen site>:101: RuntimeWarning: Unexpected value in sys.exec_prefix, expected /home/cbeyer/work/lewm-test/lpworldmodel/.venv, got /home/cbeyer/work/lewm-test/lewm/../lpworldmodel/.venv
+wrote testdata/wall_ref.gguf  tensors=237  params=38,970,350
+  image_size                 224
+  patch_size                 14
+  dim                        384
+  encoder_depth              12
+  encoder_heads              3
+  encoder_dim_head           64
+  encoder_mlp_dim            768
+  encoder_feature            cls
+  encoder_proj_hidden        2048
+  code_dim                   384
+  action_dim                 10
+  action_smoothed_dim        10
+  action_mlp_hidden          1536
+  predictor_depth            6
+  predictor_heads            16
+  predictor_dim_head         64
+  predictor_mlp_dim          2048
+  predictor_num_frames       3
+  predictor_num_patches      1
+  predictor_proj_hidden      2048
+  link                       reprelu
+<frozen site>:101: RuntimeWarning: Unexpected value in sys.prefix, expected /home/cbeyer/work/lewm-test/lpworldmodel/.venv, got /home/cbeyer/work/lewm-test/lewm/../lpworldmodel/.venv
+<frozen site>:101: RuntimeWarning: Unexpected value in sys.exec_prefix, expected /home/cbeyer/work/lewm-test/lpworldmodel/.venv, got /home/cbeyer/work/lewm-test/lewm/../lpworldmodel/.venv
+wrote testdata/wall_ref.dump.gguf  tensors=30
+  in.visual                    (4, 3, 224, 224)       |max|=1  nz=1.00
+  in.actions                   (6, 10)                |max|=2.246  nz=1.00
+  encoder.block.0.out          (4, 257, 384)          |max|=9.263  nz=1.00
+  encoder.block.1.out          (4, 257, 384)          |max|=17.34  nz=1.00
+  encoder.block.10.out         (4, 257, 384)          |max|=68.34  nz=1.00
+  encoder.block.11.out         (4, 257, 384)          |max|=70.24  nz=1.00
+  encoder.block.2.out          (4, 257, 384)          |max|=22.66  nz=1.00
+  encoder.block.3.out          (4, 257, 384)          |max|=31.8  nz=1.00
+  encoder.block.4.out          (4, 257, 384)          |max|=40.42  nz=1.00
+  encoder.block.5.out          (4, 257, 384)          |max|=46.78  nz=1.00
+  encoder.block.6.out          (4, 257, 384)          |max|=51.83  nz=1.00
+  encoder.block.7.out          (4, 257, 384)          |max|=56.87  nz=1.00
+  encoder.block.8.out          (4, 257, 384)          |max|=62.03  nz=1.00
+  encoder.block.9.out          (4, 257, 384)          |max|=63.73  nz=1.00
+  encoder.norm.out             (4, 257, 384)          |max|=5.043  nz=1.00
+  encoder.tokens_in            (4, 257, 384)          |max|=2.497  nz=1.00
+  encoder.u                    (4, 1, 384)            |max|=6.792  nz=1.00
+  encoder.z                    (4, 1, 384)            |max|=3.217  nz=0.46
+  action_encoder.out           (6, 384)               |max|=0.777  nz=1.00
+  predictor.block.0.out        (3, 384)               |max|=3.288  nz=1.00
+  predictor.block.1.out        (3, 384)               |max|=3.355  nz=1.00
+  predictor.block.2.out        (3, 384)               |max|=3.424  nz=1.00
+  predictor.block.3.out        (3, 384)               |max|=3.852  nz=1.00
+  predictor.block.4.out        (3, 384)               |max|=3.9  nz=1.00
+  predictor.block.5.out        (3, 384)               |max|=4.291  nz=1.00
+  predictor.norm.out           (3, 384)               |max|=5.749  nz=1.00
+  predictor.tokens_in          (3, 384)               |max|=3.257  nz=1.00
+  predictor.u_pred             (3, 1, 384)            |max|=6.412  nz=1.00
+  predictor.z_pred             (3, 1, 384)            |max|=3.435  nz=0.34
+  rollout.z                    (7, 1, 384)            |max|=3.435  nz=0.31
+total 546540
+drwxr-xr-x. 1 cbeyer cbeyer       350 Sep 23 18:37 .
+drwxr-xr-x. 1 cbeyer cbeyer       254 Sep 23 18:12 ..
+-rw-r--r--. 1 cbeyer cbeyer      2554 Sep 23 18:37 hydra_patch.yaml
+-rw-r--r--. 1 cbeyer cbeyer     16379 Sep 23 18:37 make_fixtures.log
+-rw-r--r--. 1 cbeyer cbeyer  42221024 Sep 23 18:37 random_patch_seed0.dump.gguf
+-rw-r--r--. 1 cbeyer cbeyer 156329440 Sep 23 18:37 random_patch_seed0.gguf
+-rw-r--r--. 1 cbeyer cbeyer  24595424 Sep 23 18:37 random_seed0.dump.gguf
+-rw-r--r--. 1 cbeyer cbeyer 155936064 Sep 23 18:37 random_seed0.gguf
+-rw-r--r--. 1 cbeyer cbeyer  24595424 Sep 23 18:37 wall_ref.dump.gguf
+-rw-r--r--. 1 cbeyer cbeyer 155936064 Sep 23 18:37 wall_ref.gguf
+-rw-r--r--. 1 cbeyer cbeyer     10880 Sep 23 17:01 wall_ref.rollout.gguf

@@ -83,6 +83,10 @@ bool GgufStore::has_key(const std::string& key) const { return gguf_find_key(ggu
 
 uint32_t GgufStore::get_u32(const std::string& key) const { return gguf_get_val_u32(gguf_, key_id(key)); }
 
+float GgufStore::get_f32(const std::string& key) const { return gguf_get_val_f32(gguf_, key_id(key)); }
+
+bool GgufStore::get_bool(const std::string& key) const { return gguf_get_val_bool(gguf_, key_id(key)); }
+
 std::string GgufStore::get_str(const std::string& key) const { return gguf_get_val_str(gguf_, key_id(key)); }
 
 }  // namespace lewm
