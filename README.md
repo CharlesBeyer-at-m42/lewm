@@ -35,3 +35,7 @@ Python tools run in the reference implementation's environment:
 ```bash
 ../lpworldmodel/.venv/bin/python tools/export_model.py --help
 ```
+
+## Testdata
+
+`testdata/*.gguf` are ignored by git. Regenerate with `tools/make_fixtures.sh`.

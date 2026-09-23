@@ -5,7 +5,16 @@ FetchContent_Declare(doctest
     GIT_SHALLOW    TRUE)
 FetchContent_MakeAvailable(doctest)
 
-# Test executables are added here as they are written, e.g.:
-# add_executable(test_encoder test_encoder.cpp)
-# target_link_libraries(test_encoder PRIVATE lewm doctest::doctest)
-# add_test(NAME encoder COMMAND test_encoder)
+# Model files and reference dumps produced by tools/export_model.py and tools/dump_reference.py.
+set(LEWM_TESTDATA_DIR "${CMAKE_SOURCE_DIR}/testdata" CACHE PATH "directory with *.gguf test fixtures")
+
+add_executable(lewm-tests
+    test_main.cpp
+    test_host_tensor.cpp
+    test_parity.cpp
+)
+target_link_libraries(lewm-tests PRIVATE lewm doctest::doctest)
+target_compile_definitions(lewm-tests PRIVATE LEWM_TESTDATA_DIR="${LEWM_TESTDATA_DIR}")
+
+include(${doctest_SOURCE_DIR}/scripts/cmake/doctest.cmake)
+doctest_discover_tests(lewm-tests)

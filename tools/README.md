@@ -7,3 +7,5 @@ pickled checkpoints can be loaded.
 - `export_model.py`: reference checkpoint (or seeded random init) -> model file (GGUF)
 - `dump_reference.py`: one fixed input through the reference model -> reference dump (GGUF)
 - `export_dataset.py`: reference dataset -> flat file LeWM can memory-map (training milestone)
+
+Regenerate every fixture with `make_fixtures.sh`.
