@@ -1,0 +1,4 @@
+build/
+*.gguf
+__pycache__/
+.cache/
