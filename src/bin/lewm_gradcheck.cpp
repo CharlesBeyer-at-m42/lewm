@@ -12,6 +12,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <exception>
+#include <filesystem>
 #include <string>
 #include <vector>
 
@@ -85,6 +86,10 @@ int main(int argc, char** argv) {
     if (model_path.empty() || dump_path.empty()) {
         std::fprintf(stderr, "usage: lewm-gradcheck <model.gguf> <grad.gguf> [--atol 1e-6] [--rtol 1e-3] [--threads N]\n");
         return 2;
+    }
+    if (!std::filesystem::exists(model_path) || !std::filesystem::exists(dump_path)) {
+        std::fprintf(stderr, "fixture missing (%s or %s); skipping\n", model_path.c_str(), dump_path.c_str());
+        return 77;  // CTest SKIP_RETURN_CODE
     }
     try {
         lewm::Session session(threads, device);

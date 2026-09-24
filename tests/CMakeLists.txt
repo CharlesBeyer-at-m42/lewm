@@ -20,3 +20,8 @@ target_compile_definitions(lewm-tests PRIVATE LEWM_TESTDATA_DIR="${LEWM_TESTDATA
 
 include(${doctest_SOURCE_DIR}/scripts/cmake/doctest.cmake)
 doctest_discover_tests(lewm-tests)
+
+# Gate 1 of the training milestone as a test: skipped (exit 77) when the fixtures are absent.
+add_test(NAME gradient-parity-random COMMAND lewm-gradcheck ${LEWM_TESTDATA_DIR}/random_seed0.gguf ${LEWM_TESTDATA_DIR}/random_seed0.grad.gguf)
+add_test(NAME gradient-parity-trained COMMAND lewm-gradcheck ${LEWM_TESTDATA_DIR}/wall_ref.gguf ${LEWM_TESTDATA_DIR}/wall_ref.grad.gguf)
+set_tests_properties(gradient-parity-random gradient-parity-trained PROPERTIES SKIP_RETURN_CODE 77)

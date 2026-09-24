@@ -128,6 +128,13 @@ void fill_random(lewm::StepInputs& in, const lewm::TrainGraph& tg, lewm::Rng& pr
     }
 }
 
+std::string num(double v) {
+    if (!std::isfinite(v)) return "null";
+    char buf[64];
+    std::snprintf(buf, sizeof buf, "%.9g", v);
+    return buf;
+}
+
 double seconds_since(std::chrono::steady_clock::time_point t0) {
     return std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
 }
@@ -245,9 +252,9 @@ int main(int argc, char** argv) {
             std::printf("epoch %d done in %.0f s: train loss %.5f (z %.5f reg %.5f)  val loss %.5f (z %.5f reg %.5f)\n", epoch,
                         seconds_since(t_epoch), tr, n ? sum_z / n : NAN, n ? sum_reg / n : NAN, vl, nv ? val_z / nv : NAN,
                         nv ? val_reg / nv : NAN);
-            log << "{\"kind\":\"epoch\",\"epoch\":" << epoch << ",\"step\":" << global_step << ",\"train_loss\":" << tr
-                << ",\"train_z_loss\":" << (n ? sum_z / n : NAN) << ",\"train_reg_loss\":" << (n ? sum_reg / n : NAN)
-                << ",\"val_loss\":" << vl << ",\"val_z_loss\":" << (nv ? val_z / nv : NAN) << ",\"val_reg_loss\":" << (nv ? val_reg / nv : NAN)
+            log << "{\"kind\":\"epoch\",\"epoch\":" << epoch << ",\"step\":" << global_step << ",\"train_loss\":" << num(tr)
+                << ",\"train_z_loss\":" << num(n ? sum_z / n : NAN) << ",\"train_reg_loss\":" << num(n ? sum_reg / n : NAN)
+                << ",\"val_loss\":" << num(vl) << ",\"val_z_loss\":" << num(nv ? val_z / nv : NAN) << ",\"val_reg_loss\":" << num(nv ? val_reg / nv : NAN)
                 << ",\"epoch_seconds\":" << seconds_since(t_epoch) << ",\"time\":" << seconds_since(t_start) << "}\n";
             log.flush();
 

@@ -22,7 +22,10 @@ def load(path):
             line = line.strip()
             if not line:
                 continue
-            rec = json.loads(line)
+            try:
+                rec = json.loads(line)
+            except json.JSONDecodeError:
+                continue  # e.g. an epoch record with a non-finite validation loss
             if rec.get("kind") == "step":
                 out[int(rec["step"])] = rec
     return out
