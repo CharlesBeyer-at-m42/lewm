@@ -35,6 +35,7 @@ public:
     std::string get_str(const std::string& key) const;
 
     const std::string& path() const { return path_; }
+    const gguf_context* gguf() const { return gguf_; }
 
 private:
     std::string path_;

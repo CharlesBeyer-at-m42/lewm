@@ -29,8 +29,14 @@ ggml_tensor* GraphBuilder::layer_norm(ggml_context* ctx, ggml_tensor* x, const s
     return y;
 }
 
+ggml_tensor* GraphBuilder::apply_mask(ggml_context* ctx, ggml_tensor* x, const std::string& site) const {
+    if (!mask_) return x;
+    ggml_tensor* m = mask_(site, x->ne[0], x->ne[1], x->ne[2], x->ne[3]);
+    return m ? ggml_mul(ctx, x, m) : x;
+}
+
 ggml_tensor* GraphBuilder::attention(ggml_context* ctx, ggml_tensor* x, ggml_tensor* mask, const std::string& prefix,
-                                     uint32_t heads, uint32_t dim_head) const {
+                                     uint32_t heads, uint32_t dim_head, bool dropout) const {
     // x: {D, L, N}
     const int64_t L = x->ne[1];
     const int64_t N = x->ne[2];
@@ -52,20 +58,25 @@ ggml_tensor* GraphBuilder::attention(ggml_context* ctx, ggml_tensor* x, ggml_ten
     ggml_tensor* kq = ggml_mul_mat(ctx, k, q);  // {L_k, L_q, h, N}
     const float scale = 1.0f / std::sqrt(static_cast<float>(dim_head));
     kq = ggml_soft_max_ext(ctx, kq, mask, scale, 0.0f);
+    if (dropout) kq = apply_mask(ctx, kq, prefix + ".probs");  // dropout_p inside scaled_dot_product_attention
 
     ggml_tensor* v_t = ggml_cont(ctx, ggml_permute(ctx, v, 1, 0, 2, 3));  // {L, d, h, N}
     ggml_tensor* kqv = ggml_mul_mat(ctx, v_t, kq);                        // {d, L_q, h, N}
     kqv = ggml_cont(ctx, ggml_permute(ctx, kqv, 0, 2, 1, 3));            // {d, h, L_q, N}
     kqv = ggml_reshape_3d(ctx, kqv, inner, L, N);                         // {inner, L, N}
 
-    return linear(ctx, kqv, w(prefix + ".to_out.0.weight"), w(prefix + ".to_out.0.bias"));
+    ggml_tensor* out = linear(ctx, kqv, w(prefix + ".to_out.0.weight"), w(prefix + ".to_out.0.bias"));
+    if (dropout) out = apply_mask(ctx, out, prefix + ".to_out.1");  // nn.Dropout after to_out
+    return out;
 }
 
-ggml_tensor* GraphBuilder::feed_forward(ggml_context* ctx, ggml_tensor* x, const std::string& prefix) const {
+ggml_tensor* GraphBuilder::feed_forward(ggml_context* ctx, ggml_tensor* x, const std::string& prefix, bool dropout) const {
     ggml_tensor* h = layer_norm(ctx, x, prefix + ".net.0", kAffineNormEps);
     h = linear(ctx, h, w(prefix + ".net.1.weight"), w(prefix + ".net.1.bias"));
     h = ggml_gelu_erf(ctx, h);
+    if (dropout) h = apply_mask(ctx, h, prefix + ".net.3");  // nn.Dropout after GELU
     h = linear(ctx, h, w(prefix + ".net.4.weight"), w(prefix + ".net.4.bias"));
+    if (dropout) h = apply_mask(ctx, h, prefix + ".net.5");  // nn.Dropout after the second Linear
     return h;
 }
 
@@ -210,11 +221,11 @@ ggml_tensor* GraphBuilder::predictor(ggml_context* ctx, ggml_tensor* codes, ggml
         };
 
         ggml_tensor* h = modulate(ggml_norm(ctx, x, kBlockNormEps), shift_msa, scale_msa);
-        h = attention(ctx, h, mask, pre + ".attn", hp.predictor_heads, hp.predictor_dim_head);
+        h = attention(ctx, h, mask, pre + ".attn", hp.predictor_heads, hp.predictor_dim_head, /*dropout=*/true);
         x = ggml_add(ctx, x, ggml_mul(ctx, gate_msa, h));
 
         h = modulate(ggml_norm(ctx, x, kBlockNormEps), shift_mlp, scale_mlp);
-        h = feed_forward(ctx, h, pre + ".mlp");
+        h = feed_forward(ctx, h, pre + ".mlp", /*dropout=*/true);
         x = ggml_add(ctx, x, ggml_mul(ctx, gate_mlp, h));
         if (tap) tap("predictor.block." + std::to_string(i) + ".out", x);
     }

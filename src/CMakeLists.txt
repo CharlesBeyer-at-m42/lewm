@@ -7,6 +7,7 @@ add_library(lewm STATIC
     lewm/graph_builder.cpp
     lewm/world_model.cpp
     lewm/train_graph.cpp
+    lewm/dataset.cpp
     lewm/parity.cpp
 )
 target_include_directories(lewm PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
@@ -21,3 +22,6 @@ target_link_libraries(lewm-rollout PRIVATE lewm)
 
 add_executable(lewm-gradcheck bin/lewm_gradcheck.cpp)
 target_link_libraries(lewm-gradcheck PRIVATE lewm)
+
+add_executable(lewm-train bin/lewm_train.cpp)
+target_link_libraries(lewm-train PRIVATE lewm)

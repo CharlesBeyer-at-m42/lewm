@@ -25,7 +25,7 @@ import torch
 import lewm_ref as L
 
 
-def modules_from_config(config: Path, action_dim: int, seed: int):
+def modules_from_config(config: Path, action_dim: int, seed: int, mup_init: bool = False):
     """Random init exactly as train.py would build the modules, minus muP re-init.
 
     muP init only changes the *distribution* of random weights; parity does not care which
@@ -49,6 +49,12 @@ def modules_from_config(config: Path, action_dim: int, seed: int):
         output_dim=encoder.emb_dim,
     )
     link = hydra.utils.instantiate(cfg.link) if cfg.get("link") else None
+    if mup_init:
+        # exactly what train.py does for a fresh muP run: encoder and predictor only
+        from models.mup import mup_init_
+        mup_init_(encoder, tag="encoder", verbose=False)
+        mup_init_(predictor, tag="predictor", verbose=False)
+        return encoder, action_encoder, predictor, link
     # AdaLN-zero and cls_token are zero-initialised by the reference; for a parity test that is
     # a weak signal (gates multiply everything by 0), so perturb them like a few training steps.
     with torch.no_grad():
@@ -69,6 +75,7 @@ def main(argv=None) -> int:
     ap.add_argument("--action-dim", type=int, default=10, help="chunked action width (for --random)")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--mup-base-width", type=int, default=0, help="muP base width for lr multipliers (default: encoder dim)")
+    ap.add_argument("--mup-init", action="store_true", help="with --random: apply the reference's muP init (faithful fresh run), no perturbation")
     ap.add_argument("--out", type=Path, required=True)
     args = ap.parse_args(argv)
 
@@ -78,8 +85,8 @@ def main(argv=None) -> int:
     else:
         if not args.config:
             ap.error("--random requires --config")
-        encoder, action_encoder, predictor, link = modules_from_config(args.config, args.action_dim, args.seed)
-        source = f"random:seed={args.seed}:config={args.config.resolve()}"
+        encoder, action_encoder, predictor, link = modules_from_config(args.config, args.action_dim, args.seed, args.mup_init)
+        source = f"random:seed={args.seed}:mup_init={args.mup_init}:config={args.config.resolve()}"
 
     for m in (encoder, action_encoder, predictor):
         m.eval().cpu()

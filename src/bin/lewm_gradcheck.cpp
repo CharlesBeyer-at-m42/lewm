@@ -114,7 +114,12 @@ int main(int argc, char** argv) {
         lewm::HostTensor proj = dump.read("rdm.proj");       // {C, K}
         lewm::HostTensor tsorted = dump.read("rdm.target_sorted");  // {B, K, TP}
 
-        lewm::Losses l = tg.forward_backward(visual, actions, proj, tsorted);
+        lewm::StepInputs in;
+        in.visual = std::move(visual);
+        in.actions = std::move(actions);
+        in.proj = std::move(proj);
+        in.target_sorted = std::move(tsorted);
+        lewm::Losses l = tg.step(in);
         const float ref_z = dump.read("loss.z").data[0];
         const float ref_reg = dump.read("loss.reg").data[0];
         const float ref_total = dump.read("loss.total").data[0];
