@@ -18,6 +18,7 @@
 // optimizer.gguf, and <out>/model_latest.gguf.
 
 #include <chrono>
+#include <future>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -202,17 +203,40 @@ int main(int argc, char** argv) {
 
         StepRandom rnd(args.seed, 0);
         lewm::Rng val_proj(args.seed, kStreamVal), val_target(args.seed, kStreamVal + 1), val_dummy(args.seed, kStreamVal + 2);
-        lewm::StepInputs in;
         const auto t_start = std::chrono::steady_clock::now();
+
+        // Host-side input preparation (batch conversion, RDMReg randomness, dropout masks) takes
+        // tens of milliseconds per step, so it runs one step ahead on a worker thread while the
+        // backend computes the current step. Two buffers alternate; the randomness is seeded by
+        // absolute step counters, so the order of preparation does not change the numbers.
+        lewm::StepInputs bufs[2];
+        auto prepare_train = [&](lewm::StepInputs& dst, int64_t b, int64_t step) {
+            data.make_batch(data.plan_train(), static_cast<size_t>(b * B), B, dst.visual, dst.actions);
+            fill_random(dst, train, rnd.proj, rnd.target, rnd.dropout, step, C, K, B, TP, args.dropout);
+        };
+        auto prepare_val = [&](lewm::StepInputs& dst, int64_t b, int64_t step) {
+            data.make_batch(data.plan_val(), static_cast<size_t>(b * B), B, dst.visual, dst.actions);
+            fill_random(dst, *val, val_proj, val_target, val_dummy, step, C, K, B, TP, 0.0f);
+        };
 
         for (int epoch = first_epoch; epoch < args.epochs; ++epoch) {
             double sum_total = 0, sum_z = 0, sum_reg = 0;
             int64_t n = 0;
             const auto t_epoch = std::chrono::steady_clock::now();
+            const auto steps_left = [&]() { return args.max_steps < 0 || global_step < args.max_steps; };
+            std::future<void> pending;
+            int cur = 0;
+            if (train_batches > 0 && steps_left()) {
+                pending = std::async(std::launch::async, prepare_train, std::ref(bufs[cur]), int64_t{0}, global_step);
+            }
             for (int64_t b = 0; b < train_batches; ++b) {
-                if (args.max_steps >= 0 && global_step >= args.max_steps) break;
-                data.make_batch(data.plan_train(), static_cast<size_t>(b * B), B, in.visual, in.actions);
-                fill_random(in, train, rnd.proj, rnd.target, rnd.dropout, global_step, C, K, B, TP, args.dropout);
+                if (!steps_left()) break;
+                pending.get();
+                lewm::StepInputs& in = bufs[cur];
+                if (b + 1 < train_batches && (args.max_steps < 0 || global_step + 1 < args.max_steps)) {
+                    pending = std::async(std::launch::async, prepare_train, std::ref(bufs[cur ^ 1]), b + 1, global_step + 1);
+                }
+                cur ^= 1;
                 const lewm::Losses l = train.step(in);
                 train.optimizer_step();
                 ++global_step;
@@ -237,9 +261,15 @@ int main(int argc, char** argv) {
             double val_total = 0, val_z = 0, val_reg = 0;
             int64_t nv = 0;
             if (val && val_batches > 0) {
+                const int64_t step0 = static_cast<int64_t>(epoch) * val_batches;
+                pending = std::async(std::launch::async, prepare_val, std::ref(bufs[cur]), int64_t{0}, step0);
                 for (int64_t b = 0; b < val_batches; ++b) {
-                    data.make_batch(data.plan_val(), static_cast<size_t>(b * B), B, in.visual, in.actions);
-                    fill_random(in, *val, val_proj, val_target, val_dummy, static_cast<int64_t>(epoch) * val_batches + b, C, K, B, TP, 0.0f);
+                    pending.get();
+                    lewm::StepInputs& in = bufs[cur];
+                    if (b + 1 < val_batches) {
+                        pending = std::async(std::launch::async, prepare_val, std::ref(bufs[cur ^ 1]), b + 1, step0 + b + 1);
+                    }
+                    cur ^= 1;
                     const lewm::Losses l = val->step(in);
                     val_total += l.total;
                     val_z += l.z;

@@ -5,6 +5,7 @@
 
 #include <doctest/doctest.h>
 
+#include <array>
 #include <cmath>
 #include <functional>
 #include <random>
@@ -151,4 +152,94 @@ TEST_CASE("ggml: reprelu forward is relu, backward is gelu_erf's gradient") {
         if (x[i] < -0.5f && std::fabs(rep.analytic[i]) > 1e-3f) differs_somewhere = true;
     }
     CHECK(differs_somewhere);
+}
+
+// repeat_back on the GPU backend must match a double-precision host reference for the shapes
+// training produces: bias gradients (reduce every row), positional-embedding gradients (reduce the
+// batch dim only), repeats along every dim at once, and a strided (transposed-view) source. The
+// CPU backend is checked too where it applies (it asserts on strided sources). Skipped without a GPU.
+TEST_CASE("ggml: repeat_back on the GPU backend matches a host reference") {
+    ggml_backend_dev_t gpu = ggml_backend_dev_by_type(GGML_BACKEND_DEVICE_TYPE_GPU);
+    if (gpu == nullptr) {
+        MESSAGE("no GPU backend; skipping");
+        return;
+    }
+    struct Case { std::array<int64_t, 4> src; std::array<int64_t, 4> dst; bool transpose; };
+    const Case cases[] = {
+        {{384, 257, 64, 1}, {384, 1, 1, 1}, false},
+        {{384, 257, 64, 1}, {384, 257, 1, 1}, false},
+        {{16, 6, 4, 2}, {8, 3, 4, 1}, false},
+        {{300, 70, 1, 1}, {300, 1, 1, 1}, true},   // src is the transposed view of a {70, 300} tensor
+    };
+    for (const Case& c : cases) {
+        const int64_t n_src = c.src[0] * c.src[1] * c.src[2] * c.src[3];
+        const std::vector<float> x = random_input(n_src, 11);
+        // host reference in double; x is stored in the base tensor's layout
+        std::vector<double> ref(static_cast<size_t>(c.dst[0] * c.dst[1] * c.dst[2] * c.dst[3]), 0.0);
+        for (int64_t i3 = 0; i3 < c.src[3]; ++i3)
+            for (int64_t i2 = 0; i2 < c.src[2]; ++i2)
+                for (int64_t i1 = 0; i1 < c.src[1]; ++i1)
+                    for (int64_t i0 = 0; i0 < c.src[0]; ++i0) {
+                        const int64_t flat = c.transpose ? (i0 * c.src[1] + i1)
+                                                         : (((i3 * c.src[2] + i2) * c.src[1] + i1) * c.src[0] + i0);
+                        const int64_t o = ((i3 % c.dst[3]) * c.dst[2] + i2 % c.dst[2]) * c.dst[1] * c.dst[0] +
+                                          (i1 % c.dst[1]) * c.dst[0] + i0 % c.dst[0];
+                        ref[static_cast<size_t>(o)] += x[static_cast<size_t>(flat)];
+                    }
+        auto run = [&](ggml_backend_t backend) {
+            ggml_init_params ip{};
+            ip.mem_size = ggml_tensor_overhead() * 16 + ggml_graph_overhead();
+            ip.no_alloc = true;
+            ggml_context* ctx = ggml_init(ip);
+            ggml_tensor* base = c.transpose ? ggml_new_tensor_2d(ctx, GGML_TYPE_F32, c.src[1], c.src[0])
+                                            : ggml_new_tensor_4d(ctx, GGML_TYPE_F32, c.src[0], c.src[1], c.src[2], c.src[3]);
+            ggml_set_input(base);
+            ggml_tensor* src = c.transpose ? ggml_transpose(ctx, base) : base;
+            ggml_tensor* dst = ggml_repeat_back(ctx, src, ggml_new_tensor_4d(ctx, GGML_TYPE_F32, c.dst[0], c.dst[1], c.dst[2], c.dst[3]));
+            ggml_set_output(dst);
+            ggml_cgraph* gf = ggml_new_graph(ctx);
+            ggml_build_forward_expand(gf, dst);
+            ggml_gallocr_t ga = ggml_gallocr_new(ggml_backend_get_default_buffer_type(backend));
+            REQUIRE(ggml_gallocr_alloc_graph(ga, gf));
+            ggml_backend_tensor_set(base, x.data(), 0, x.size() * sizeof(float));
+            REQUIRE(ggml_backend_graph_compute(backend, gf) == GGML_STATUS_SUCCESS);
+            std::vector<float> out(static_cast<size_t>(ggml_nelements(dst)));
+            ggml_backend_tensor_get(dst, out.data(), 0, out.size() * sizeof(float));
+            ggml_gallocr_free(ga);
+            ggml_free(ctx);
+            return out;
+        };
+        auto worst_abs = [&](const std::vector<float>& got) {
+            REQUIRE(got.size() == ref.size());
+            double w = 0;
+            for (size_t i = 0; i < ref.size(); ++i) w = std::max(w, std::fabs(got[i] - ref[i]));
+            return w;
+        };
+        // fp32 accumulation of R terms of scale ~1.5: allow a few ulps per term
+        const double R = static_cast<double>(n_src) / static_cast<double>(ref.size());
+        const double tol = 4e-7 * R * 1.5 + 1e-6;
+        CAPTURE(c.src[0]); CAPTURE(c.src[1]); CAPTURE(c.src[2]); CAPTURE(c.src[3]);
+        CAPTURE(c.dst[0]); CAPTURE(c.dst[1]); CAPTURE(c.dst[2]); CAPTURE(c.dst[3]);
+
+        ggml_backend_t dev = ggml_backend_dev_init(gpu, nullptr);
+        REQUIRE(dev != nullptr);
+        const std::vector<float> got = run(dev);
+        ggml_backend_free(dev);
+        const double gpu_err = worst_abs(got);
+        CAPTURE(gpu_err); CAPTURE(tol);
+        CHECK(gpu_err < tol);
+
+        if (!c.transpose) {
+            ggml_backend_t cpu = ggml_backend_cpu_init();
+            const double cpu_err = worst_abs(run(cpu));
+            ggml_backend_free(cpu);
+            CAPTURE(cpu_err);
+            CHECK(cpu_err < tol);
+        }
+        // deterministic: a second run gives bit-identical output
+        ggml_backend_t dev2 = ggml_backend_dev_init(gpu, nullptr);
+        const std::vector<float> again = run(dev2);
+        ggml_backend_free(dev2);
+        CHECK(again == got);
+    }
 }
