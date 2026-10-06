@@ -227,6 +227,11 @@ def load_model_file(path: Path):
         for name, arr in tensors.items():
             if name.startswith(prefix + "."):
                 sd[name[len(prefix) + 1 :]] = torch.from_numpy(arr)
+        # Files written by lewm-train carry ggml's dimension count, which drops leading singleton
+        # dims (cls_token (1,1,384) arrives as (384,)); restore the module's shape.
+        for name, t in module.state_dict().items():
+            if name in sd and sd[name].shape != t.shape and sd[name].numel() == t.numel():
+                sd[name] = sd[name].reshape(t.shape)
         missing, unexpected = module.load_state_dict(sd, strict=False)
         if missing or unexpected:
             raise RuntimeError(f"{prefix}: missing={missing} unexpected={unexpected}")
