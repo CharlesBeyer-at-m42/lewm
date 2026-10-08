@@ -15,7 +15,7 @@ class Dataset {
 public:
     struct Meta {
         int64_t n_episodes = 0;
-        int64_t frames_per_episode = 0;
+        int64_t frames_per_episode = 0;  // 0 when ragged: see episode_frames
         int64_t steps = 0;  // raw actions per episode
         int64_t height = 0, width = 0;
         int64_t action_dim = 0;  // raw action width (before chunking)
@@ -46,6 +46,9 @@ private:
     size_t frames_bytes_ = 0;
     int fd_ = -1;
 
+    std::vector<int64_t> episode_offset_;  // first frame of each episode in frames.u8, plus total (n_episodes + 1)
+
+    int64_t episode_frames(int64_t episode) const { return episode_offset_[static_cast<size_t>(episode) + 1] - episode_offset_[static_cast<size_t>(episode)]; }
     const uint8_t* frame(int64_t episode, int64_t index) const;
 };
 

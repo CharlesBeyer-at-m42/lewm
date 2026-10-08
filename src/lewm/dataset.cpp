@@ -41,6 +41,18 @@ Dataset::Dataset(const std::string& dir) {
         };
         read_plan("plan.train", plan_train_);
         read_plan("plan.val", plan_val_);
+
+        // frame offsets: uniform (Wall) or ragged from episode_frames (PushT)
+        episode_offset_.assign(static_cast<size_t>(meta_.n_episodes) + 1, 0);
+        if (meta_.frames_per_episode > 0) {
+            for (int64_t e = 0; e < meta_.n_episodes; ++e) episode_offset_[static_cast<size_t>(e) + 1] = (e + 1) * meta_.frames_per_episode;
+        } else {
+            ggml_tensor* t = g.tensor("episode_frames");  // {n_episodes} i32
+            if (t->type != GGML_TYPE_I32 || t->ne[0] != meta_.n_episodes) throw std::runtime_error("dataset: bad episode_frames tensor");
+            std::vector<int32_t> buf(static_cast<size_t>(meta_.n_episodes));
+            ggml_backend_tensor_get(t, buf.data(), 0, ggml_nbytes(t));
+            for (int64_t e = 0; e < meta_.n_episodes; ++e) episode_offset_[static_cast<size_t>(e) + 1] = episode_offset_[static_cast<size_t>(e)] + buf[static_cast<size_t>(e)];
+        }
     }
     ggml_backend_free(cpu);
 
@@ -50,7 +62,7 @@ Dataset::Dataset(const std::string& dir) {
     struct stat st{};
     if (::fstat(fd_, &st) != 0) throw std::runtime_error("dataset: fstat failed");
     frames_bytes_ = static_cast<size_t>(st.st_size);
-    const size_t expect = static_cast<size_t>(meta_.n_episodes * meta_.frames_per_episode * 3 * meta_.height * meta_.width);
+    const size_t expect = static_cast<size_t>(episode_offset_.back()) * static_cast<size_t>(3 * meta_.height * meta_.width);
     if (frames_bytes_ != expect) throw std::runtime_error("dataset: frames.u8 size does not match metadata");
     void* p = ::mmap(nullptr, frames_bytes_, PROT_READ, MAP_PRIVATE, fd_, 0);
     if (p == MAP_FAILED) throw std::runtime_error("dataset: mmap failed");
@@ -64,7 +76,7 @@ Dataset::~Dataset() {
 
 const uint8_t* Dataset::frame(int64_t episode, int64_t index) const {
     const size_t frame_bytes = static_cast<size_t>(3 * meta_.height * meta_.width);
-    return frames_ + (static_cast<size_t>(episode) * static_cast<size_t>(meta_.frames_per_episode) + static_cast<size_t>(index)) * frame_bytes;
+    return frames_ + static_cast<size_t>(episode_offset_[static_cast<size_t>(episode)] + index) * frame_bytes;
 }
 
 void Dataset::make_batch(const std::vector<PlanRow>& plan, size_t first, int64_t B, HostTensor& visual, HostTensor& actions) const {
@@ -81,7 +93,7 @@ void Dataset::make_batch(const std::vector<PlanRow>& plan, size_t first, int64_t
     for (int64_t b = 0; b < B; ++b) {
         const PlanRow row = plan[first + static_cast<size_t>(b)];
         const int64_t ep = row[0], start = row[1];
-        if (ep < 0 || ep >= meta_.n_episodes || start < 0 || start + fs * T > meta_.steps) {
+        if (ep < 0 || ep >= meta_.n_episodes || start < 0 || start + fs * T > meta_.steps || start + fs * T > episode_frames(ep)) {
             throw std::runtime_error("dataset: plan row out of range");
         }
         for (int64_t t = 0; t < T; ++t) {
