@@ -51,6 +51,7 @@ class ExportedDataset:
         tens = {t.name: np.array(t.data) for t in r.tensors}
         self.actions = tens["actions"].astype(np.float32)  # (n_ep, steps, A)
         self.plan_train = tens["plan.train"].astype(np.int64)  # (n, 2)
+        self.plan_val = tens["plan.val"].astype(np.int64)  # (n, 2)
         # frame offsets: uniform (Wall) or ragged from episode_frames (PushT), as dataset.cpp does
         if self.fpe > 0:
             counts = np.full(self.n_ep, self.fpe, dtype=np.int64)
@@ -59,8 +60,8 @@ class ExportedDataset:
         self.offset = np.concatenate([[0], np.cumsum(counts)])
         self.frames = np.memmap(d / "frames.u8", dtype=np.uint8, mode="r", shape=(int(self.offset[-1]), 3, self.H, self.W))
 
-    def batch(self, first: int, B: int):
-        rows = self.plan_train[first : first + B]
+    def batch(self, first: int, B: int, plan=None):
+        rows = (self.plan_train if plan is None else plan)[first : first + B]
         vis = np.empty((B, self.T, 3, self.H, self.W), dtype=np.float32)
         act = np.empty((B, self.T, self.A * self.fs), dtype=np.float32)
         for b, (ep, start) in enumerate(rows):
