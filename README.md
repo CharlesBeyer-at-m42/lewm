@@ -8,8 +8,8 @@ The reference implementation is the PyTorch repository `lpworldmodel`, cloned be
 
 ## Where the design lives
 
-- `../CONTEXT.md`: the glossary. Use its terms in code, tests, and commit messages.
-- `../docs/adr/`: architecture decisions. Read `0001` (why standalone C++20 on ggml) and `0002`
+- `ai/CONTEXT.md`: the glossary. Use its terms in code, tests, and commit messages.
+- `ai/docs/adr/`: architecture decisions. Read `0001` (why standalone C++20 on ggml) and `0002`
   (scope: LpWM path only) before proposing structural changes.
 
 ## Layout
